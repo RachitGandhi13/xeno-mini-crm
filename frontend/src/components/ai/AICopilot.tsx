@@ -23,7 +23,7 @@ type Phase =
 
 function RuleChip({ rule }: { rule: SegmentRule }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-800">
+    <span className="inline-flex items-center gap-1 rounded-full border border-[#C0CFC0] bg-[#C0CFC0]/25 px-2.5 py-0.5 text-xs font-medium text-[#3A5A3A]">
       {fieldLabel(rule.field)} {operatorSymbol(rule.operator)} {rule.value}
     </span>
   );
@@ -50,21 +50,21 @@ function CampaignForm({ result, msgLoading, msgResult, onLaunch, onBack }: Campa
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Create Campaign</p>
+      <p className="text-xs font-semibold text-[#4A504A]/50 uppercase tracking-wide">Create Campaign</p>
 
       <div className="space-y-2">
-        <label className="block text-xs text-slate-500">Campaign Name</label>
+        <label className="block text-xs text-[#4A504A]">Campaign Name</label>
         <input
-          className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-xl border border-[#C0CFC0]/50 bg-white/60 px-3 py-1.5 text-sm text-[#1C1E1C] focus:outline-none focus:ring-2 focus:ring-[#6E7A6E]/50 transition-all duration-300"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
       </div>
 
       <div className="space-y-2">
-        <label className="block text-xs text-slate-500">Channel</label>
+        <label className="block text-xs text-[#4A504A]">Channel</label>
         <select
-          className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-xl border border-[#C0CFC0]/50 bg-white/60 px-3 py-1.5 text-sm text-[#1C1E1C] focus:outline-none focus:ring-2 focus:ring-[#6E7A6E]/50 transition-all duration-300"
           value={channel}
           onChange={(e) => setChannel(e.target.value)}
         >
@@ -75,7 +75,7 @@ function CampaignForm({ result, msgLoading, msgResult, onLaunch, onBack }: Campa
       </div>
 
       <div className="space-y-2">
-        <label className="block text-xs text-slate-500">Message Template</label>
+        <label className="block text-xs text-[#4A504A]">Message Template</label>
         {msgLoading ? (
           <div className="space-y-1.5">
             <Skeleton className="h-4 w-full" />
@@ -84,14 +84,14 @@ function CampaignForm({ result, msgLoading, msgResult, onLaunch, onBack }: Campa
         ) : (
           <textarea
             rows={3}
-            className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full rounded-xl border border-[#C0CFC0]/50 bg-white/60 px-3 py-1.5 text-sm text-[#1C1E1C] resize-none focus:outline-none focus:ring-2 focus:ring-[#6E7A6E]/50 transition-all duration-300"
             placeholder="Hi {{name}}, ..."
             value={template}
             onChange={(e) => setTemplate(e.target.value)}
           />
         )}
         {msgResult?.explanation && (
-          <p className="text-xs text-slate-400 italic">{msgResult.explanation}</p>
+          <p className="text-xs text-[#4A504A]/60 italic">{msgResult.explanation}</p>
         )}
       </div>
 
@@ -223,22 +223,22 @@ export default function AICopilot() {
     <Card className="flex flex-col h-full min-h-0">
       <CardHeader className="pb-2 shrink-0">
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-indigo-500" />
+          <Sparkles className="h-4 w-4 text-[#6E7A6E]" />
           AI Copilot
         </CardTitle>
-        <p className="text-xs text-slate-400">Describe your audience in plain English</p>
+        <p className="text-xs text-[#4A504A]/60">Describe your audience in plain English</p>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4 flex-1 min-h-0">
         {/* Result area */}
         <div className="flex-1 min-h-0 overflow-y-auto">
           {phase.kind === 'idle' && (
-            <div className="rounded-xl border border-dashed border-slate-200 p-5 text-center">
-              <Sparkles className="mx-auto mb-2 h-8 w-8 text-indigo-200" />
-              <p className="text-sm text-slate-500">
-                Try: <span className="italic text-slate-400">"high spenders who haven't bought in 60 days"</span>
+            <div className="rounded-2xl border-2 border-dashed border-[#C0CFC0]/50 p-5 text-center">
+              <Sparkles className="mx-auto mb-2 h-8 w-8 text-[#C0CFC0]" />
+              <p className="text-sm text-[#4A504A]/70">
+                Try: <span className="italic text-[#4A504A]/50">"high spenders who haven't bought in 60 days"</span>
               </p>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-[#4A504A]/40">
                 The AI will build a live audience segment from your data.
               </p>
             </div>
@@ -260,8 +260,8 @@ export default function AICopilot() {
             <div className="space-y-3">
               {/* Header */}
               <div>
-                <p className="font-semibold text-slate-800">{phase.result.segmentName}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{phase.result.explanation}</p>
+                <p className="font-semibold text-[#1C1E1C]">{phase.result.segmentName}</p>
+                <p className="text-xs text-[#4A504A]/60 mt-0.5">{phase.result.explanation}</p>
               </div>
 
               {/* Rules */}
@@ -272,9 +272,9 @@ export default function AICopilot() {
               </div>
 
               {/* Audience count */}
-              <div className="flex items-center gap-2 rounded-lg bg-indigo-50 px-3 py-2">
-                <Users className="h-4 w-4 text-indigo-600 shrink-0" />
-                <span className="text-sm font-medium text-indigo-800">
+              <div className="flex items-center gap-2 rounded-2xl bg-[#C0CFC0]/25 border border-[#C0CFC0]/40 px-3 py-2">
+                <Users className="h-4 w-4 text-[#586358] shrink-0" />
+                <span className="text-sm font-medium text-[#3A5A3A]">
                   {formatCompact(phase.result.audienceCount)} matching customers
                 </span>
               </div>
@@ -282,18 +282,18 @@ export default function AICopilot() {
               {/* Sample names */}
               {phase.result.sample.length > 0 && (
                 <div>
-                  <p className="text-xs text-slate-400 mb-1">Sample audience</p>
+                  <p className="text-xs text-[#4A504A]/40 mb-1">Sample audience</p>
                   <div className="flex flex-wrap gap-1.5">
                     {phase.result.sample.slice(0, 5).map((s) => (
                       <span
                         key={s.id}
-                        className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600"
+                        className="rounded-full bg-[#F4F4F3] border border-[#E8E5E0] px-2 py-0.5 text-xs text-[#4A504A]"
                       >
                         {s.name}
                       </span>
                     ))}
                     {phase.result.audienceCount > 5 && (
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-400">
+                      <span className="rounded-full bg-[#F4F4F3] border border-[#E8E5E0] px-2 py-0.5 text-xs text-[#4A504A]/50">
                         +{formatCompact(phase.result.audienceCount - 5)} more
                       </span>
                     )}
@@ -324,7 +324,7 @@ export default function AICopilot() {
               </div>
 
               {/* Reset */}
-              <button onClick={reset} className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600">
+              <button onClick={reset} className="flex items-center gap-1 text-xs text-[#4A504A]/40 hover:text-[#4A504A] transition-all duration-300">
                 <X className="h-3 w-3" /> Start over
               </button>
             </div>
@@ -343,9 +343,9 @@ export default function AICopilot() {
           {phase.kind === 'done' && (() => {
             const isError = phase.message.startsWith('Error:');
             return (
-              <div className={`rounded-xl border p-4 ${isError ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
-                <p className={`text-sm ${isError ? 'text-red-700' : 'text-emerald-800'}`}>{phase.message}</p>
-                <button onClick={reset} className={`mt-2 text-xs underline ${isError ? 'text-red-500 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-800'}`}>
+              <div className={`rounded-2xl border p-4 ${isError ? 'bg-red-50 border-red-100' : 'bg-[#C0CFC0]/20 border-[#C0CFC0]/40'}`}>
+                <p className={`text-sm ${isError ? 'text-red-700' : 'text-[#3A5A3A]'}`}>{phase.message}</p>
+                <button onClick={reset} className={`mt-2 text-xs underline transition-all duration-300 ${isError ? 'text-red-500 hover:text-red-700' : 'text-[#586358] hover:text-[#3A5A3A]'}`}>
                   Start a new query
                 </button>
               </div>
@@ -359,7 +359,7 @@ export default function AICopilot() {
             <textarea
               ref={textareaRef}
               rows={2}
-              className="flex-1 resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 resize-none rounded-xl border border-[#C0CFC0]/50 bg-white/60 px-3 py-2 text-sm text-[#1C1E1C] placeholder:text-[#4A504A]/40 focus:outline-none focus:ring-2 focus:ring-[#6E7A6E]/50 transition-all duration-300"
               placeholder="e.g. customers who spent over ₹10,000 in the last month…"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}

@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import StatsCard from '@/components/dashboard/StatsCard';
 import CampaignFunnel from '@/components/dashboard/CampaignFunnel';
 import RecentCampaigns from '@/components/dashboard/RecentCampaigns';
+import AICopilot from '@/components/ai/AICopilot';
 import { formatINR, formatCompact } from '@/lib/utils';
 
 export default function DashboardPage() {
@@ -82,6 +83,11 @@ export default function DashboardPage() {
         <div className="xl:col-span-2">
           <RecentCampaigns />
         </div>
+      </div>
+
+      {/* AI Copilot */}
+      <div className="min-h-[420px]">
+        <AICopilot />
       </div>
     </div>
   );
