@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
 export const AISegmentRequestSchema = z.object({
-  prompt: z.string().min(3, 'Prompt must be at least 3 characters').max(500),
+  prompt: z.string().min(1, 'Prompt is required').max(500),
 });
 
 export const AIMessageRequestSchema = z.object({
-  audienceDescription: z.string().min(3).max(300),
-  campaignGoal: z.string().min(3).max(300),
+  audienceDescription: z.string().min(1).max(300),
+  campaignGoal: z.string().min(1).max(300),
   channel: z.enum(['whatsapp', 'sms', 'email', 'rcs']),
 });
 

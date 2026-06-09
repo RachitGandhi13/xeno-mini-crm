@@ -17,11 +17,11 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(
-      (body as { error?: { message?: string } }).error?.message ??
-        `HTTP ${res.status}`
-    );
+    const body = await res.json().catch(() => ({})) as { error?: { message?: string; details?: unknown } };
+    const detail = body.error?.details
+      ? ` (${JSON.stringify(body.error.details)})`
+      : '';
+    throw new Error((body.error?.message ?? `HTTP ${res.status}`) + detail);
   }
 
   return res.json() as Promise<T>;

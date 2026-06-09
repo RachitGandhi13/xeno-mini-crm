@@ -340,14 +340,17 @@ export default function AICopilot() {
             />
           )}
 
-          {phase.kind === 'done' && (
-            <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4">
-              <p className="text-sm text-emerald-800">{phase.message}</p>
-              <button onClick={reset} className="mt-2 text-xs text-emerald-600 hover:text-emerald-800 underline">
-                Start a new query
-              </button>
-            </div>
-          )}
+          {phase.kind === 'done' && (() => {
+            const isError = phase.message.startsWith('Error:');
+            return (
+              <div className={`rounded-xl border p-4 ${isError ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                <p className={`text-sm ${isError ? 'text-red-700' : 'text-emerald-800'}`}>{phase.message}</p>
+                <button onClick={reset} className={`mt-2 text-xs underline ${isError ? 'text-red-500 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-800'}`}>
+                  Start a new query
+                </button>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Input row — hidden once a campaign form is open */}
