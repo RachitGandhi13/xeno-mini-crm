@@ -4,7 +4,6 @@ import { api } from '@/lib/api';
 import StatsCard from '@/components/dashboard/StatsCard';
 import CampaignFunnel from '@/components/dashboard/CampaignFunnel';
 import RecentCampaigns from '@/components/dashboard/RecentCampaigns';
-import AICopilot from '@/components/ai/AICopilot';
 import { formatINR, formatCompact } from '@/lib/utils';
 
 export default function DashboardPage() {
@@ -69,18 +68,12 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Main content — two columns on wide screens */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="flex flex-col gap-6 xl:col-span-2">
-          <CampaignFunnel
-            analytics={analytics}
-            loading={campaignsLoading || (!!latestCampaignId && analyticsLoading)}
-          />
-          <RecentCampaigns />
-        </div>
-        <div className="xl:col-span-1 min-h-0" style={{ height: 'calc(100vh - 220px)', maxHeight: 680 }}>
-          <AICopilot />
-        </div>
+      <div className="flex flex-col gap-6">
+        <CampaignFunnel
+          analytics={analytics}
+          loading={campaignsLoading || (!!latestCampaignId && analyticsLoading)}
+        />
+        <RecentCampaigns />
       </div>
     </div>
   );
