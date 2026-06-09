@@ -1,5 +1,4 @@
-import { generateText } from 'ai';
-import { google } from '@ai-sdk/google';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
 import { pool } from '../../db';
 import { compileSegmentQuery } from '../../lib/segmentCompiler';
@@ -36,15 +35,18 @@ function extractJson(text: string): unknown {
 }
 
 async function callGemini(system: string, userPrompt: string): Promise<string> {
-  // Merge system + user into one message for broadest model compatibility
-  const { text } = await generateText({
-    model: google('gemini-pro'),
-    prompt: `${system}\n\n---\nUser request: ${userPrompt}`,
-  }).catch((e: unknown) => {
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey) throw new AppError(503, 'GOOGLE_GENERATIVE_AI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent(`${system}\n\n---\nUser request: ${userPrompt}`);
+    return result.response.text();
+  } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     throw new AppError(502, `AI error: ${msg}`, 'AI_ERROR');
-  });
-  return text;
+  }
 }
 
 // ─── System prompts ───────────────────────────────────────────────────────────
@@ -122,10 +124,6 @@ export interface AISegmentResult {
 }
 
 export async function generateSegmentFromPrompt(prompt: string): Promise<AISegmentResult> {
-  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-    throw new AppError(503, 'GOOGLE_GENERATIVE_AI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
-  }
-
   // Step 1: Call Gemini and parse the JSON response
   const text = await callGemini(SEGMENT_SYSTEM_PROMPT, prompt);
 
@@ -178,10 +176,6 @@ export interface AIMessageResult {
 export async function generateMessageTemplate(
   input: AIMessageRequest
 ): Promise<AIMessageResult> {
-  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-    throw new AppError(503, 'GOOGLE_GENERATIVE_AI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
-  }
-
   const text = await callGemini(
     MESSAGE_SYSTEM_PROMPT,
     `Channel: ${input.channel}\nAudience: ${input.audienceDescription}\nCampaign goal: ${input.campaignGoal}`
