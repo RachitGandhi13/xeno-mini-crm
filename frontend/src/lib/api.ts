@@ -32,6 +32,16 @@ const post = <T>(path: string, body: unknown) =>
   req<T>(path, { method: 'POST', body: JSON.stringify(body) });
 const del = <T>(path: string) => req<T>(path, { method: 'DELETE' });
 
+// Strip undefined/null so they never appear as literal "undefined" in the query string.
+function qs(params?: Record<string, string | number | undefined | null>): string {
+  if (!params) return '';
+  const clean = Object.fromEntries(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== null)
+  ) as Record<string, string>;
+  const s = new URLSearchParams(clean).toString();
+  return s ? `?${s}` : '';
+}
+
 // ─── API surface ──────────────────────────────────────────────────────────────
 
 export const api = {
@@ -40,10 +50,8 @@ export const api = {
   },
 
   customers: {
-    list: (params?: { page?: number; limit?: number; search?: string; city?: string }) => {
-      const q = new URLSearchParams(params as Record<string, string>).toString();
-      return get<PaginatedResponse<Customer>>(`/api/customers${q ? `?${q}` : ''}`);
-    },
+    list: (params?: { page?: number; limit?: number; search?: string; city?: string }) =>
+      get<PaginatedResponse<Customer>>(`/api/customers${qs(params)}`),
     create: (data: { email: string; name: string; phone?: string; city?: string; tags?: string[] }) =>
       post<{ customer: Customer; warnings: unknown[] }>('/api/customers', data),
     bulk: (customers: unknown[]) =>
@@ -51,19 +59,15 @@ export const api = {
   },
 
   orders: {
-    byCustomer: (customerId: string, params?: { page?: number; limit?: number }) => {
-      const q = new URLSearchParams(params as Record<string, string>).toString();
-      return get<PaginatedResponse<Order>>(`/api/orders/customer/${customerId}${q ? `?${q}` : ''}`);
-    },
+    byCustomer: (customerId: string, params?: { page?: number; limit?: number }) =>
+      get<PaginatedResponse<Order>>(`/api/orders/customer/${customerId}${qs(params)}`),
     create: (data: { customerId: string; totalAmount: number; items?: unknown[] }) =>
       post<Order>('/api/orders', data),
   },
 
   segments: {
-    list: (params?: { page?: number; limit?: number }) => {
-      const q = new URLSearchParams(params as Record<string, string>).toString();
-      return get<PaginatedResponse<Segment>>(`/api/segments${q ? `?${q}` : ''}`);
-    },
+    list: (params?: { page?: number; limit?: number }) =>
+      get<PaginatedResponse<Segment>>(`/api/segments${qs(params)}`),
     preview: (rules: SegmentRule[]) =>
       post<{ count: number; sample: Customer[]; compiledSql: string }>('/api/segments/preview', { rules }),
     create: (data: { name: string; description?: string; rules: SegmentRule[] }) =>
@@ -72,10 +76,8 @@ export const api = {
   },
 
   campaigns: {
-    list: (params?: { page?: number; limit?: number; status?: string }) => {
-      const q = new URLSearchParams(params as Record<string, string>).toString();
-      return get<PaginatedResponse<Campaign>>(`/api/campaigns${q ? `?${q}` : ''}`);
-    },
+    list: (params?: { page?: number; limit?: number; status?: string }) =>
+      get<PaginatedResponse<Campaign>>(`/api/campaigns${qs(params)}`),
     get: (id: string) => get<Campaign>(`/api/campaigns/${id}`),
     create: (data: {
       name: string;
