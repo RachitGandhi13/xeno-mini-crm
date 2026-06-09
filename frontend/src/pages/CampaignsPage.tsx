@@ -85,6 +85,9 @@ function CampaignCard({ c }: { c: Campaign }) {
             <Badge variant={STATUS_VARIANT[c.status]} className="capitalize">{c.status}</Badge>
           </div>
         </div>
+        {launchMutation.error && (
+          <p className="px-4 pb-2 text-xs text-red-500">{(launchMutation.error as Error).message}</p>
+        )}
         {expanded && <CampaignAnalyticsPanel campaignId={c.id} />}
       </CardContent>
     </Card>
@@ -110,7 +113,10 @@ function CreateCampaignForm({ onClose }: { onClose: () => void }) {
         name: form.name,
         channel: form.channel as any,
         messageTemplate: form.messageTemplate,
+        // Backend requires one of segmentDefinitionId or segmentRules.
+        // When "All customers" is selected, send a broad rule that matches everyone.
         segmentDefinitionId: segmentId || undefined,
+        segmentRules: segmentId ? undefined : [{ field: 'order_count', operator: 'gte', value: 0 }],
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['campaigns'] });
@@ -159,6 +165,12 @@ function CreateCampaignForm({ onClose }: { onClose: () => void }) {
             placeholder="Hi {{name}}, ..."
             value={form.messageTemplate} onChange={set('messageTemplate')} />
         </div>
+
+        {mutation.error && (
+          <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+            {(mutation.error as Error).message}
+          </p>
+        )}
 
         <div className="flex gap-2">
           <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
