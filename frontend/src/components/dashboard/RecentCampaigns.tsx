@@ -15,14 +15,13 @@ const STATUS_VARIANT: Record<CampaignStatus, 'success' | 'warning' | 'destructiv
 
 function CampaignRow({ c }: { c: Campaign }) {
   return (
-    <div className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+    <div className="flex items-center justify-between py-3 border-b border-[#E8E5E0] last:border-0 transition-all duration-300 hover:bg-[#C0CFC0]/10 rounded-xl px-2 -mx-2">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-800">{c.name}</p>
-        <p className="text-xs text-slate-400 capitalize">{c.channel}</p>
+        <p className="truncate text-sm font-medium text-[#1C1E1C]">{c.name}</p>
+        <p className="text-xs text-[#4A504A]/60 capitalize mt-0.5">{c.channel} · {formatCompact(c.totalAudienceCount)} recipients</p>
       </div>
-      <div className="ml-4 flex items-center gap-3 shrink-0">
-        <span className="text-xs text-slate-500">{formatCompact(c.totalAudienceCount)} rcvr</span>
-        <Badge variant={STATUS_VARIANT[c.status]} className="capitalize text-xs">{c.status}</Badge>
+      <div className="ml-4 shrink-0">
+        <Badge variant={STATUS_VARIANT[c.status]} className="capitalize">{c.status}</Badge>
       </div>
     </div>
   );
@@ -43,18 +42,16 @@ export default function RecentCampaigns() {
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-9 w-full" />
+              <Skeleton key={i} className="h-10 w-full rounded-xl" />
             ))}
           </div>
         ) : !data?.data.length ? (
-          <p className="py-6 text-center text-sm text-slate-400">
+          <p className="py-8 text-center text-sm text-[#4A504A]/50">
             No campaigns yet — create one to get started.
           </p>
         ) : (
           <div>
-            {data.data.map((c) => (
-              <CampaignRow key={c.id} c={c} />
-            ))}
+            {data.data.map((c) => <CampaignRow key={c.id} c={c} />)}
           </div>
         )}
       </CardContent>

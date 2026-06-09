@@ -1,11 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  Megaphone,
-  Users,
-  Filter,
-  Zap,
-} from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, Filter, Leaf, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV = [
@@ -15,15 +9,30 @@ const NAV = [
   { to: '/segments',  label: 'Segments',   icon: Filter },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
   return (
-    <aside className="flex h-screen w-60 flex-col bg-slate-900 text-slate-100 shrink-0">
+    <aside className="flex h-screen w-60 flex-col bg-[#283228] shrink-0">
       {/* Logo */}
-      <div className="flex items-center gap-2 px-5 py-5 border-b border-slate-800">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-          <Zap className="h-4 w-4 text-white" />
+      <div className="flex items-center justify-between px-5 py-5 border-b border-[#3A4A3A]">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#4A7A4A]/80">
+            <Leaf className="h-4 w-4 text-[#C0CFC0]" />
+          </div>
+          <span className="font-semibold text-[#D4DFCF] tracking-tight">Xeno CRM</span>
         </div>
-        <span className="font-semibold text-white">Xeno CRM</span>
+        {/* Mobile close */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden p-1 rounded-lg hover:bg-[#3A4A3A] transition-all duration-300"
+          >
+            <X className="h-4 w-4 text-[#8FA08F]" />
+          </button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -33,12 +42,14 @@ export default function Sidebar() {
             key={to}
             to={to}
             end={to === '/'}
+            onClick={onClose}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium',
+                'transition-all duration-300 ease-out',
                 isActive
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-[#3D5C3D] text-[#C0CFC0] shadow-sm'
+                  : 'text-[#8FA08F] hover:bg-[#333F33] hover:text-[#C0CFC0]'
               )
             }
           >
@@ -49,9 +60,9 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-slate-800 px-5 py-4">
-        <p className="text-xs text-slate-500">AI-Native Mini CRM</p>
-        <p className="text-xs text-slate-600">Xeno Take-Home Assignment</p>
+      <div className="border-t border-[#3A4A3A] px-5 py-4">
+        <p className="text-xs text-[#6A7A6A]">AI-Native Mini CRM</p>
+        <p className="text-xs text-[#4A5A4A] mt-0.5">Xeno Take-Home</p>
       </div>
     </aside>
   );

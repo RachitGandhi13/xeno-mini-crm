@@ -13,7 +13,6 @@ export default function DashboardPage() {
     refetchInterval: 30_000,
   });
 
-  // Show funnel for the most recently completed campaign
   const { data: campaigns, isLoading: campaignsLoading } = useQuery({
     queryKey: ['campaigns', 'completed'],
     queryFn: () => api.campaigns.list({ status: 'completed', limit: 1 }),
@@ -28,20 +27,21 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      {/* Page header */}
+    <div className="flex flex-col gap-6 p-4 sm:p-6">
+      {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500">Overview of your CRM activity</p>
+        <h1 className="text-xl font-bold text-[#1C1E1C]">Dashboard</h1>
+        <p className="text-sm text-[#4A504A]/70 mt-0.5">Overview of your CRM activity</p>
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      {/* KPI cards — 1 col on phone, 2 on sm, 4 on xl */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <StatsCard
           title="Total Customers"
           value={stats ? formatCompact(stats.totalCustomers) : '—'}
           icon={Users}
-          iconColor="text-indigo-600"
+          iconBg="bg-[#C0CFC0]/40"
+          iconColor="text-[#586358]"
           loading={statsLoading}
         />
         <StatsCard
@@ -49,31 +49,39 @@ export default function DashboardPage() {
           value={stats ? stats.totalCampaigns : '—'}
           subtitle={stats ? `${stats.activeCampaigns} active` : undefined}
           icon={Megaphone}
-          iconColor="text-violet-600"
+          iconBg="bg-[#C0CFC0]/30"
+          iconColor="text-[#4A6A4A]"
           loading={statsLoading}
         />
         <StatsCard
           title="Monthly Conversions"
           value={stats ? formatCompact(stats.monthlyConversions) : '—'}
           icon={ShoppingCart}
-          iconColor="text-emerald-600"
+          iconBg="bg-[#E5CEC6]/50"
+          iconColor="text-[#8B5E52]"
           loading={statsLoading}
         />
         <StatsCard
           title="Attributed Revenue"
           value={stats ? formatINR(stats.attributedRevenue) : '—'}
           icon={TrendingUp}
-          iconColor="text-amber-600"
+          iconBg="bg-[#DDA28F]/20"
+          iconColor="text-[#A06848]"
           loading={statsLoading}
         />
       </div>
 
-      <div className="flex flex-col gap-6">
-        <CampaignFunnel
-          analytics={analytics}
-          loading={campaignsLoading || (!!latestCampaignId && analyticsLoading)}
-        />
-        <RecentCampaigns />
+      {/* Charts */}
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 sm:gap-6">
+        <div className="xl:col-span-3">
+          <CampaignFunnel
+            analytics={analytics}
+            loading={campaignsLoading || (!!latestCampaignId && analyticsLoading)}
+          />
+        </div>
+        <div className="xl:col-span-2">
+          <RecentCampaigns />
+        </div>
       </div>
     </div>
   );
