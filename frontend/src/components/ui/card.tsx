@@ -5,7 +5,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
     <div
       className={cn(
         'rounded-2xl border border-white/60 bg-white/75 backdrop-blur-sm',
-        'shadow-[0_8px_30px_rgb(0,0,0,0.04)]',
+        'shadow-[0_8px_30px_rgb(0,0,0,0.04)] animate-slide-up',
         className
       )}
       {...props}
