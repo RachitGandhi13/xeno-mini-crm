@@ -1,5 +1,5 @@
 import { generateObject } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { pool } from '../../db';
 import { compileSegmentQuery } from '../../lib/segmentCompiler';
@@ -110,13 +110,13 @@ export interface AISegmentResult {
 }
 
 export async function generateSegmentFromPrompt(prompt: string): Promise<AISegmentResult> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new AppError(503, 'OPENAI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    throw new AppError(503, 'GOOGLE_GENERATIVE_AI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
   }
 
   // Step 1: Generate structured rules from natural language
   const genResult = await generateObject({
-    model: openai('gpt-4o-mini'),
+    model: google('gemini-2.0-flash'),
     schema: SegmentOutputSchema,
     system: SEGMENT_SYSTEM_PROMPT,
     prompt,
@@ -163,12 +163,12 @@ export interface AIMessageResult {
 export async function generateMessageTemplate(
   input: AIMessageRequest
 ): Promise<AIMessageResult> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new AppError(503, 'OPENAI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
+  if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    throw new AppError(503, 'GOOGLE_GENERATIVE_AI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
   }
 
   const { object } = await generateObject({
-    model: openai('gpt-4o-mini'),
+    model: google('gemini-2.0-flash'),
     schema: MessageOutputSchema,
     system: MESSAGE_SYSTEM_PROMPT,
     prompt: `Channel: ${input.channel}
