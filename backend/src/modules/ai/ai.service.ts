@@ -33,19 +33,24 @@ function extractJson(text: string): unknown {
   return JSON.parse(clean);
 }
 
-async function callGemini(system: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (!apiKey) throw new AppError(503, 'GOOGLE_GENERATIVE_AI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
-
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+async function callClaude(system: string, userPrompt: string): Promise<string> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new AppError(503, 'ANTHROPIC_API_KEY is not configured', 'AI_NOT_CONFIGURED');
 
   let res: Response;
   try {
-    res = await fetch(url, {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${system}\n\n---\nUser request: ${userPrompt}` }] }],
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system,
+        messages: [{ role: 'user', content: userPrompt }],
       }),
     });
   } catch (e: unknown) {
@@ -58,8 +63,8 @@ async function callGemini(system: string, userPrompt: string): Promise<string> {
     throw new AppError(502, `AI error (HTTP ${res.status}): ${body}`, 'AI_ERROR');
   }
 
-  const data = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  const data = await res.json() as { content?: { type: string; text: string }[] };
+  const text = data.content?.[0]?.text;
   if (!text) throw new AppError(502, 'AI returned empty response', 'AI_ERROR');
   return text;
 }
@@ -140,7 +145,7 @@ export interface AISegmentResult {
 
 export async function generateSegmentFromPrompt(prompt: string): Promise<AISegmentResult> {
   // Step 1: Call Gemini and parse the JSON response
-  const text = await callGemini(SEGMENT_SYSTEM_PROMPT, prompt);
+  const text = await callClaude(SEGMENT_SYSTEM_PROMPT, prompt);
 
   let parsed: unknown;
   try {
@@ -191,7 +196,7 @@ export interface AIMessageResult {
 export async function generateMessageTemplate(
   input: AIMessageRequest
 ): Promise<AIMessageResult> {
-  const text = await callGemini(
+  const text = await callClaude(
     MESSAGE_SYSTEM_PROMPT,
     `Channel: ${input.channel}\nAudience: ${input.audienceDescription}\nCampaign goal: ${input.campaignGoal}`
   );
