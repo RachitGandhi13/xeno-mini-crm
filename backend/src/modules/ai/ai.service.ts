@@ -37,7 +37,7 @@ function extractJson(text: string): unknown {
 
 async function callGemini(system: string, prompt: string): Promise<string> {
   const { text } = await generateText({
-    model: google('gemini-1.5-flash'),
+    model: google('gemini-pro'),
     system,
     prompt,
   }).catch((e: unknown) => {
