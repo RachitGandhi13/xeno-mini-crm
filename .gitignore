@@ -11,8 +11,6 @@ dist/
 build/
 **/dist/
 
-# Drizzle migration artifacts (keep the migrations folder but not meta snapshots)
-**/drizzle/meta/
 
 # Logs
 *.log
