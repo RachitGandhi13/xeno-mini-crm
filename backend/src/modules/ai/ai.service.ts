@@ -1,4 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
 import { pool } from '../../db';
 import { compileSegmentQuery } from '../../lib/segmentCompiler';
@@ -38,15 +37,31 @@ async function callGemini(system: string, userPrompt: string): Promise<string> {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   if (!apiKey) throw new AppError(503, 'GOOGLE_GENERATIVE_AI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
 
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  let res: Response;
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    const result = await model.generateContent(`${system}\n\n---\nUser request: ${userPrompt}`);
-    return result.response.text();
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${system}\n\n---\nUser request: ${userPrompt}` }] }],
+      }),
+    });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    throw new AppError(502, `AI error: ${msg}`, 'AI_ERROR');
+    throw new AppError(502, `AI network error: ${msg}`, 'AI_ERROR');
   }
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new AppError(502, `AI error (HTTP ${res.status}): ${body}`, 'AI_ERROR');
+  }
+
+  const data = await res.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new AppError(502, 'AI returned empty response', 'AI_ERROR');
+  return text;
 }
 
 // ─── System prompts ───────────────────────────────────────────────────────────
