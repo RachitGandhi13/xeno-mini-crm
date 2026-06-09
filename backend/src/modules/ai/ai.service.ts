@@ -115,13 +115,17 @@ export async function generateSegmentFromPrompt(prompt: string): Promise<AISegme
   }
 
   // Step 1: Generate structured rules from natural language
-  const { object } = await generateObject({
+  const genResult = await generateObject({
     model: openai('gpt-4o-mini'),
     schema: SegmentOutputSchema,
     system: SEGMENT_SYSTEM_PROMPT,
     prompt,
+  }).catch((e: unknown) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new AppError(502, `OpenAI error: ${msg}`, 'AI_ERROR');
   });
 
+  const { object } = genResult;
   const rules = object.rules as SegmentRule[];
 
   // Step 2: Compile rules to SQL and run against the live database
@@ -170,6 +174,9 @@ export async function generateMessageTemplate(
     prompt: `Channel: ${input.channel}
 Audience: ${input.audienceDescription}
 Campaign goal: ${input.campaignGoal}`,
+  }).catch((e: unknown) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new AppError(502, `OpenAI error: ${msg}`, 'AI_ERROR');
   });
 
   return {
