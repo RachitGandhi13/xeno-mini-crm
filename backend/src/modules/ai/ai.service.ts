@@ -1,4 +1,4 @@
-import { generateObject } from 'ai';
+import { generateText } from 'ai';
 import { google } from '@ai-sdk/google';
 import { z } from 'zod';
 import { pool } from '../../db';
@@ -7,46 +7,45 @@ import { AppError } from '../../middleware/errorHandler';
 import type { SegmentRule } from '../../db/schema';
 import type { AIMessageRequest } from './ai.schema';
 
-// ─── Zod schema for generateObject output ────────────────────────────────────
-// Must mirror SegmentRule exactly so the output passes directly into
-// compileSegmentQuery without a transform step.
+// ─── Zod schemas for validating parsed AI responses ──────────────────────────
 
 const RuleSchema = z.object({
   field: z.enum(['total_spend', 'order_count', 'last_purchase_days', 'city', 'tag']),
   operator: z.enum(['gte', 'lte', 'gt', 'lt', 'eq', 'neq', 'contains']),
-  // Gemini doesn't support union types — always emit as string, convert to number after
-  value: z.string().describe('Comparison value as a string. For numeric fields use digits only e.g. "5000". For city use Title Case e.g. "Delhi". For tag use lowercase e.g. "vip".'),
+  value: z.union([z.string(), z.number()]),
 });
 
 const SegmentOutputSchema = z.object({
-  rules: z
-    .array(RuleSchema)
-    .min(1)
-    .max(10)
-    .describe('Array of segment rules — all conditions are AND-combined'),
-  segmentName: z
-    .string()
-    .max(60)
-    .describe('Concise, descriptive name for this customer segment (e.g. "Delhi High-Spenders Q1")'),
-  explanation: z
-    .string()
-    .max(200)
-    .describe('One sentence explaining what this segment captures in plain English'),
+  rules: z.array(RuleSchema).min(1).max(10),
+  segmentName: z.string(),
+  explanation: z.string(),
 });
 
 const MessageOutputSchema = z.object({
-  template: z
-    .string()
-    .describe('Message copy with {{name}} and {{city}} placeholders where appropriate'),
-  subject: z
-    .string()
-    .optional()
-    .describe('Subject line — only for email channel'),
-  explanation: z
-    .string()
-    .max(150)
-    .describe('Why this message is effective for this audience'),
+  template: z.string(),
+  subject: z.string().optional(),
+  explanation: z.string(),
 });
+
+// ─── Helper: call Gemini and extract JSON from the response ──────────────────
+
+function extractJson(text: string): unknown {
+  // Strip markdown code fences if present
+  const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+  return JSON.parse(clean);
+}
+
+async function callGemini(system: string, prompt: string): Promise<string> {
+  const { text } = await generateText({
+    model: google('gemini-1.5-flash'),
+    system,
+    prompt,
+  }).catch((e: unknown) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new AppError(502, `AI error: ${msg}`, 'AI_ERROR');
+  });
+  return text;
+}
 
 // ─── System prompts ───────────────────────────────────────────────────────────
 
@@ -77,7 +76,12 @@ Common interpretations:
 - "last 3 months"                  → last_purchase_days lte 90
 - "haven't bought in N days"       → last_purchase_days gte N
 
-Always produce 1–5 rules that best capture the intent. Suggest a short, descriptive segment name.`;
+Always produce 1–5 rules. Respond ONLY with valid JSON matching this exact shape:
+{
+  "rules": [{ "field": "...", "operator": "...", "value": "..." }],
+  "segmentName": "Short descriptive name",
+  "explanation": "One sentence explanation"
+}`;
 
 const MESSAGE_SYSTEM_PROMPT = `You are a CRM copywriter for direct-to-consumer brands in India.
 Write a short, personalised marketing message for the given campaign.
@@ -90,9 +94,16 @@ Rules:
 - RCS: 1–2 sentences with an emoji allowed
 - Use ₹ for prices, not $
 - End with a clear call-to-action
-- Be warm, personal, and benefit-focused — not spammy`;
+- Be warm, personal, and benefit-focused — not spammy
 
-// ─── AI segment generation ─────────────────────────────────────────────────────
+Respond ONLY with valid JSON matching this exact shape:
+{
+  "template": "message text with {{name}} placeholders",
+  "subject": "email subject line or null",
+  "explanation": "Why this message works"
+}`;
+
+// ─── AI segment generation ────────────────────────────────────────────────────
 
 interface SampleCustomer {
   id: string;
@@ -115,23 +126,22 @@ export async function generateSegmentFromPrompt(prompt: string): Promise<AISegme
     throw new AppError(503, 'GOOGLE_GENERATIVE_AI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
   }
 
-  // Step 1: Generate structured rules from natural language
-  const genResult = await generateObject({
-    model: google('gemini-2.0-flash'),
-    schema: SegmentOutputSchema,
-    system: SEGMENT_SYSTEM_PROMPT,
-    prompt,
-  }).catch((e: unknown) => {
-    const msg = e instanceof Error ? e.message : String(e);
-    throw new AppError(502, `OpenAI error: ${msg}`, 'AI_ERROR');
-  });
+  // Step 1: Call Gemini and parse the JSON response
+  const text = await callGemini(SEGMENT_SYSTEM_PROMPT, prompt);
 
-  const { object } = genResult;
-  // Convert numeric strings back to numbers (Gemini schema only supports string values)
-  const rules = object.rules.map((r) => ({
-    ...r,
-    value: /^-?\d+(\.\d+)?$/.test(String(r.value)) ? Number(r.value) : r.value,
-  })) as SegmentRule[];
+  let parsed: unknown;
+  try {
+    parsed = extractJson(text);
+  } catch {
+    throw new AppError(502, 'AI returned invalid JSON — please try again', 'AI_PARSE_ERROR');
+  }
+
+  const validated = SegmentOutputSchema.safeParse(parsed);
+  if (!validated.success) {
+    throw new AppError(502, 'AI response did not match expected format — please try again', 'AI_PARSE_ERROR');
+  }
+
+  const rules = validated.data.rules as SegmentRule[];
 
   // Step 2: Compile rules to SQL and run against the live database
   const compiled = compileSegmentQuery(rules);
@@ -149,15 +159,15 @@ export async function generateSegmentFromPrompt(prompt: string): Promise<AISegme
 
   return {
     rules,
-    segmentName: object.segmentName,
-    explanation: object.explanation,
+    segmentName: validated.data.segmentName,
+    explanation: validated.data.explanation,
     audienceCount: parseInt(countResult.rows[0].total, 10),
     sample: sampleResult.rows,
     compiledSql: compiled.sql,
   };
 }
 
-// ─── AI message template generation ───────────────────────────────────────────
+// ─── AI message template generation ──────────────────────────────────────────
 
 export interface AIMessageResult {
   template: string;
@@ -172,21 +182,26 @@ export async function generateMessageTemplate(
     throw new AppError(503, 'GOOGLE_GENERATIVE_AI_API_KEY is not configured', 'AI_NOT_CONFIGURED');
   }
 
-  const { object } = await generateObject({
-    model: google('gemini-2.0-flash'),
-    schema: MessageOutputSchema,
-    system: MESSAGE_SYSTEM_PROMPT,
-    prompt: `Channel: ${input.channel}
-Audience: ${input.audienceDescription}
-Campaign goal: ${input.campaignGoal}`,
-  }).catch((e: unknown) => {
-    const msg = e instanceof Error ? e.message : String(e);
-    throw new AppError(502, `OpenAI error: ${msg}`, 'AI_ERROR');
-  });
+  const text = await callGemini(
+    MESSAGE_SYSTEM_PROMPT,
+    `Channel: ${input.channel}\nAudience: ${input.audienceDescription}\nCampaign goal: ${input.campaignGoal}`
+  );
+
+  let parsed: unknown;
+  try {
+    parsed = extractJson(text);
+  } catch {
+    throw new AppError(502, 'AI returned invalid JSON — please try again', 'AI_PARSE_ERROR');
+  }
+
+  const validated = MessageOutputSchema.safeParse(parsed);
+  if (!validated.success) {
+    throw new AppError(502, 'AI response did not match expected format — please try again', 'AI_PARSE_ERROR');
+  }
 
   return {
-    template: object.template,
-    subject: object.subject,
-    explanation: object.explanation,
+    template: validated.data.template,
+    subject: validated.data.subject ?? undefined,
+    explanation: validated.data.explanation,
   };
 }
