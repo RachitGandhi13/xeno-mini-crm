@@ -35,11 +35,11 @@ function extractJson(text: string): unknown {
   return JSON.parse(clean);
 }
 
-async function callGemini(system: string, prompt: string): Promise<string> {
+async function callGemini(system: string, userPrompt: string): Promise<string> {
+  // Merge system + user into one message for broadest model compatibility
   const { text } = await generateText({
     model: google('gemini-pro'),
-    system,
-    prompt,
+    prompt: `${system}\n\n---\nUser request: ${userPrompt}`,
   }).catch((e: unknown) => {
     const msg = e instanceof Error ? e.message : String(e);
     throw new AppError(502, `AI error: ${msg}`, 'AI_ERROR');
