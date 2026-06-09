@@ -14,7 +14,8 @@ import type { AIMessageRequest } from './ai.schema';
 const RuleSchema = z.object({
   field: z.enum(['total_spend', 'order_count', 'last_purchase_days', 'city', 'tag']),
   operator: z.enum(['gte', 'lte', 'gt', 'lt', 'eq', 'neq', 'contains']),
-  value: z.union([z.string(), z.number()]),
+  // Gemini doesn't support union types — always emit as string, convert to number after
+  value: z.string().describe('Comparison value as a string. For numeric fields use digits only e.g. "5000". For city use Title Case e.g. "Delhi". For tag use lowercase e.g. "vip".'),
 });
 
 const SegmentOutputSchema = z.object({
@@ -126,7 +127,11 @@ export async function generateSegmentFromPrompt(prompt: string): Promise<AISegme
   });
 
   const { object } = genResult;
-  const rules = object.rules as SegmentRule[];
+  // Convert numeric strings back to numbers (Gemini schema only supports string values)
+  const rules = object.rules.map((r) => ({
+    ...r,
+    value: /^-?\d+(\.\d+)?$/.test(String(r.value)) ? Number(r.value) : r.value,
+  })) as SegmentRule[];
 
   // Step 2: Compile rules to SQL and run against the live database
   const compiled = compileSegmentQuery(rules);
