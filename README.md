@@ -74,7 +74,7 @@ The three services are independently deployable. In development they run on sepa
 | ORM | Drizzle ORM | Schema-as-code, SQL-first, excellent TypeScript inference |
 | Database | PostgreSQL (Neon) | ACID guarantees, powerful aggregation for RFM queries, free tier |
 | Validation | Zod | Runtime schema validation for all API inputs |
-| AI | Vercel AI SDK + GPT-4o-mini | Structured output (`generateObject`) for NL → segment rules |
+| AI | Anthropic API (direct fetch) + Claude Haiku (`claude-haiku-4-5-20251001`) | Structured JSON output for NL → segment rules and message templates |
 | Frontend | React + Tailwind + shadcn/ui | Fast to compose, accessible components |
 | Deployment | Railway (backend, channel stub) + Neon (DB) | Git-push deploys, free tier sufficient |
 
@@ -235,7 +235,7 @@ HAVING COALESCE(SUM(o.total_amount::numeric), 0) >= $2
 
 ### AI-powered rule generation
 
-In Phase 3, the natural language input `"customers who spent over ₹5000 in the last month"` is sent to GPT-4o-mini via `generateObject`, which returns:
+In Phase 3, the natural language input `"customers who spent over ₹5000 in the last month"` is sent to Claude Haiku (`claude-haiku-4-5-20251001`) via a direct POST to the Anthropic API, which returns:
 
 ```json
 [
@@ -396,7 +396,7 @@ cd backend && npm install
 # 2. Configure environment
 cp .env.example .env
 # Fill DATABASE_URL with your Neon/Supabase connection string
-# Optional: OPENAI_API_KEY for AI features
+# Optional: ANTHROPIC_API_KEY for AI features
 
 # 3. Generate and run migrations
 npm run db:generate
@@ -426,7 +426,7 @@ The Vite dev server proxies all `/api/*` requests to `localhost:3001` — no COR
 |---|---|---|---|
 | `DATABASE_URL` | backend | ✅ | — |
 | `PORT` | backend | ❌ | 3001 |
-| `OPENAI_API_KEY` | backend | ❌ (disables AI features) | — |
+| `ANTHROPIC_API_KEY` | backend | ❌ (disables AI features) | — |
 | `CHANNEL_SERVICE_URL` | backend | ❌ | `http://localhost:3002` |
 | `CRM_CALLBACK_URL` | channel-service-stub | ❌ | `http://localhost:3001/api/receipts/callback` |
 | `PORT` | channel-service-stub | ❌ | 3002 |
